@@ -1,0 +1,86 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r}
+
+### Jose Mancilla ####
+### September 20th 2022 ####
+
+library(ggplot2)
+
+
+#Step 1
+#Read and load carbon emmisions data sets
+Carbon_Emissions_data= read.csv("carbon_emissions.csv")
+
+
+#Step 2
+#Fiting a Bivariate Model
+#The outcome is emissions per capita and the predictor is GDP per capita
+#Our data was not linear so we transformed the log data
+
+carbonEmissionLM<-lm(log(co2_per_capita)~ log(gdp_per_capita) ,data = Carbon_Emissions_data)
+summary(carbonEmissionLM)
+ggplot(Carbon_Emissions_data,aes(x=log(gdp_per_capita),y=log(co2_per_capita)))+
+  geom_smooth()
+
+
+
+
+#Step 4
+#Fitting a Multivariate Model
+
+carbonEmissionLM2<-lm(log(co2_per_capita)~ log(gdp_per_capita)+log(energy_per_capita),data = Carbon_Emissions_data)
+summary(carbonEmissionLM2)
+ggplot(Carbon_Emissions_data,aes(x=log(gdp_per_capita)+log(energy_per_capita),y=log(co2_per_capita)))+
+  geom_smooth()
+
+
+#Step 6
+#Out of sample Predictions
+#Create a new data set for the predictions
+
+
+Prediction_Co2<-data.frame(co2_per_capita=mean(Carbon_Emissions_data$co2_per_capita,na.rm = T),
+                           energy_per_capita=mean(Carbon_Emissions_data$energy_per_capita,na.rm = T),
+                          gdp_per_capita= c(gdp_per_capitaMin=min(Carbon_Emissions_data$gdp_per_capita,na.rm = T),
+                           gdp_per_capitaMax=max(Carbon_Emissions_data$gdp_per_capita,na.rm = T),
+                           gdp_per_capitaMean=mean(Carbon_Emissions_data$gdp_per_capita,na.rm = T))
+                         )
+                       
+CO2_Predictins =predict(carbonEmissionLM2,Prediction_Co2)
+print(CO2_Predictins)
+#Step 7 
+#Subset the Data
+
+
+ Kyoto_Protocol<-subset(Carbon_Emissions_data,Carbon_Emissions_data$year=="1998")
+
+ 
+#Step 8
+#Modeling the Decision to Sign the Kyoto Protocol
+ 
+Kyto_logit<- glm(kyoto~co2_per_capita+gdp_per_capita,data = Kyoto_Protocol,family = "binomial")
+summary(Kyto_logit)
+ggplot(Kyoto_Protocol,aes(x=co2_per_capita+gdp_per_capita,y=kyoto))+geom_smooth()
+
+#Step 9
+#Out-Of-Sample Predictions for the Kyoto Protocol
+
+Kyto_Pred <- data.frame(kyto=mean(Kyoto_Protocol$kyoto,na.rm = T),
+                        gdp_per_capita=mean(Kyoto_Protocol$gdp_per_capita,na.rm = T),
+                        co2_per_capita=c(co2_per_capitaMin=min(Kyoto_Protocol$co2_per_capita,na.rm = T),
+                        co2_per_capitaMax=max(Kyoto_Protocol$co2_per_capita,na.rm = T),
+                        co2_per_capitaMean=mean(Kyoto_Protocol$co2_per_capita,na.rm = T)) 
+                        )
+
+PredictonsKytoTreaty=predict.glm(Kyto_logit,Kyto_Pred)
+print(PredictonsKytoTreaty)
+
+```
+
+
